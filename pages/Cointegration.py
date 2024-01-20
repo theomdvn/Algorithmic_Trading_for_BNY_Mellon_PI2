@@ -78,9 +78,9 @@ all_pairs = usd_pairs + eur_pairs + gbp_pairs
 # Create Ticker objects for each forex pair
 forex_tickers = {pair: yf.Ticker(pair) for pair in all_pairs}
 
-start_date = st.date_input("Select start backtest Date",pd.to_datetime("2024-01-12"))
-end_date = st.date_input("Select End backtest Date")
-timeframe = st.selectbox("Select Timeframe", ['30m','1m','2m','5m','15m','30m','60m','90m','1h','1d','5d','1wk','1mo','3mo'])
+start_date = st.date_input("Select start backtest Date",pd.to_datetime("2024-01-09"))
+end_date = st.date_input("Select End backtest Date",pd.to_datetime("2024-01-14"))
+timeframe = st.selectbox("Select Timeframe", ['5m','1m','2m','15m','30m','60m','90m','1h','1d','5d','1wk','1mo','3mo'])
 # Create a dictionary to store historical data for each pair
 historical_data =  {}
 
@@ -105,7 +105,7 @@ def coint_matrix(all_pairs):
     cointegration_matrix = pd.DataFrame(index=all_pairs, columns=all_pairs)
     cointegration_ratio = pd.DataFrame(index=all_pairs, columns=all_pairs)
     # Perform ADF test and fill in the matrix
-    st.subheader('cointegration matrix calculation : ')
+    st.subheader('Cointegration matrix calculation : ')
     progress_bar = st.progress(0)
     i=0
     for pair1 in all_pairs:
@@ -328,7 +328,7 @@ def backtest(pair1,pair2,df):
                 if df_histo[pair].tail(len(forecast)).iloc[i] > IC['lower'].iloc[i] and in_trade_long == True:  #Close long
                     in_trade_long = False
                     vente = df_histo[pair].tail(len(forecast)).iloc[i]
-                    ptf += ptf*(vente-achat)
+                    ptf += ptf*((vente-achat)/abs(achat))
                     L_ptf.append(ptf)
                     close.append((df_histo[pair].tail(len(forecast)).index[i]))#df_histo[pair].tail(len(forecast)).iloc[i],
                     close_price.append(df_histo[pair].tail(len(forecast)).iloc[i])
@@ -336,7 +336,7 @@ def backtest(pair1,pair2,df):
                 elif df_histo[pair].tail(len(forecast)).iloc[i] < IC['upper'].iloc[i] and in_trade_short == True:  #Close short
                     in_trade_short = False
                     achat = df_histo[pair].tail(len(forecast)).iloc[i]
-                    ptf += ptf*(vente-achat)
+                    ptf += ptf*((vente-achat)/abs(achat))
                     L_ptf.append(ptf)
                     close.append((df_histo[pair].tail(len(forecast)).index[i]))#df_histo[pair].tail(len(forecast)).iloc[i],
                     close_price.append(df_histo[pair].tail(len(forecast)).iloc[i])
@@ -363,7 +363,7 @@ def backtest(pair1,pair2,df):
                     in_trade_long = False
                     #vente = df_histo[pair].tail(len(forecast)).iloc[i]
                     vente = df_histo[pair].iloc[-1]
-                    ptf += ptf*(vente-achat)
+                    ptf += ptf*((vente-achat)/abs(achat))
                     L_ptf.append(ptf)
                     close.append((df_histo[pair].tail(len(forecast)).index[i]))#df_histo[pair].tail(len(forecast)).iloc[i],
                     close_price.append(df_histo[pair].iloc[-1])
@@ -372,7 +372,7 @@ def backtest(pair1,pair2,df):
                     in_trade_short = False
                     #achat = df_histo[pair].tail(len(forecast)).iloc[i]
                     achat = df_histo[pair].iloc[-1]
-                    ptf += ptf*(vente-achat)
+                    ptf += ptf*((vente-achat)/abs(achat))
                     L_ptf.append(ptf)
                     close.append((df_histo[pair].tail(len(forecast)).index[i]))#df_histo[pair].tail(len(forecast)).iloc[i],
                     close_price.append(df_histo[pair].iloc[-1])
