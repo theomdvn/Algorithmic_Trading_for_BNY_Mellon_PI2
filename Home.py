@@ -26,3 +26,5 @@ st.markdown("- OUSTRAIN Edgar")
 st.markdown("- THOMAS Victor")
 st.markdown("- JOUVE Thomas")
 st.markdown("- MIDAVAINE Théo")
+
+st.markdown("[Link to Github](https://github.com/theomdvn/Algorithmic_Trading_for_BNY_Mellon_PI2)")
