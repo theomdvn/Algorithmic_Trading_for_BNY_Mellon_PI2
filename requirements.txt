@@ -8,3 +8,5 @@ yfinance==0.2.35
 zipp==3.17.0
 scipy==1.10.1
 seaborn==0.13.0
+async-generator==1.10
+async-timeout==3.0.1
