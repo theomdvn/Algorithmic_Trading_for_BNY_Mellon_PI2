@@ -6,7 +6,7 @@ import seaborn as sns
 import yfinance as yf
 import matplotlib.pyplot as plt
 import streamlit as st
-
+st.title('Cointegration historical backtest')
 
 def history(self, period="1mo", interval="1d",
             start=None, end=None, prepost=False, actions=True,

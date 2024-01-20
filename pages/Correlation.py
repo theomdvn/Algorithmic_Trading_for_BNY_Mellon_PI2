@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 
+st.title('Correlation backtest (random generation)')
 #I)
 
 # 1. Définir la matrice de corrélation
