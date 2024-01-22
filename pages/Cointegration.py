@@ -79,8 +79,9 @@ all_pairs = usd_pairs + eur_pairs + gbp_pairs
 forex_tickers = {pair: yf.Ticker(pair) for pair in all_pairs}
 
 start_date = st.date_input("Select start backtest Date",pd.to_datetime("2024-01-09"))
-end_date = st.date_input("Select End backtest Date",pd.to_datetime("2024-01-12"))
-timeframe = st.selectbox("Select Timeframe", ['5m','1m','2m','15m','30m','60m','90m','1h','1d','5d','1wk','1mo','3mo'])
+end_date = st.date_input("Select End backtest Date",pd.to_datetime("2024-01-15"))
+timeframe = st.selectbox("Select Timeframe",['15m','1m','2m','5m','15m','30m','60m','90m','1h','1d','5d','1wk','1mo','3mo'])
+
 # Create a dictionary to store historical data for each pair
 historical_data =  {}
 
@@ -420,12 +421,12 @@ if len(true_indices) > 0:
         df_res,pt = backtest(p1,p2,df_histo)
         st.table(df_res)
         st.write(f'Number of trades : {len(df_res)}')
-        st.write(f'PnL : {pt:.4f}' )
+        #st.write(f'PnL : {pt:.4f}' )
         st.markdown("---")
         result *= pt
         #st.write(f'Final PnL {pt}')
         #show_error(p1,p2)
-    st.subheader(f'Total PNL : {result}' )
+    #st.subheader(f'Total PNL : {result}' )
 
    
 else:
