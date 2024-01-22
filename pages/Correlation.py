@@ -49,16 +49,13 @@ st.line_chart(prices)
 
 # Calcul de la matrice de corrélation
 correlation_matrix = prices.corr()
-st.subheader("Correlation Matrix")
-st.dataframe(correlation_matrix)
+# st.subheader("Correlation Matrix")
+# st.dataframe(correlation_matrix)
 
 #III)
 
 
-# Calcul du spread entre les deux premiers stocks
-spread = prices["stock_corr_0"] - prices["stock_corr_1"]
-st.subheader("Spread between stock_corr_0 and stock_corr_1")
-st.line_chart(spread)
+
 
 # # Affichage de la matrice de corrélation avec une heatmap
 st.subheader("Correlation Matrix Heatmap")
@@ -173,6 +170,11 @@ def simulate_gbm(prices, days, dt=1):
 selected_variable1 = st.selectbox("Select Stock 1", prices.columns)
 selected_variable2 = st.selectbox("Select Stock 2", prices.columns)
 
+# Calcul du spread entre les deux premiers stocks
+spread = prices[selected_variable1] - prices[selected_variable2]
+st.subheader(f"Spread between {selected_variable1} and {selected_variable2}")
+st.line_chart(spread)
+
 trade_on_spread(prices, selected_variable1, selected_variable2)
 
 # Simuler les prix pour les 365 prochains jours
@@ -230,3 +232,143 @@ st.line_chart(cumulative_pnl)
 
 final_pnl = cumulative_pnl[-1]
 st.write(f"Final PnL after the simulation period: {final_pnl:.2f}")
+
+
+
+def calculate_macd(data, n_fast=12, n_slow=26, n_signal=9):
+    
+    data = data.copy()
+    ema_fast = data.ewm(span=n_fast, min_periods=n_fast).mean()
+    ema_slow = data.ewm(span=n_slow, min_periods=n_slow).mean()
+
+    macd = ema_fast - ema_slow
+    signal = macd.ewm(span=n_signal, min_periods=n_signal).mean()
+    return macd, signal
+
+def apply_macd_strategy2(data1, data2):
+
+
+    # Calculate MACD for the first asset
+
+    macd, signal = calculate_macd(data1['tick'])
+
+    # Create signals
+    signals = pd.Series(0, index=data1.index)
+    signals[macd > signal] = 1  # Buy
+    signals[macd < signal] = -1 # Sell
+
+    # Apply signals to the second asset
+    data2 = data2.copy()
+    data2['Signal'] = signals.reindex(data2.index).ffill()
+    data2['Returns'] = data2['tick'].pct_change()
+    data2['Strategy Returns'] = data2['Returns'] * data2['Signal'].shift(1)
+    data2['Cumulative Strategy PnL'] = (1 + data2['Strategy Returns'].fillna(0)).cumprod()
+
+    return data2
+
+
+def macd_method(stock_a, stock_b, entry):
+    pd.options.mode.chained_assignment = None  
+    
+    dfa = pd.DataFrame({'tick': stock_a})
+    dfb = pd.DataFrame({'tick': stock_b})
+    
+    df = apply_macd_strategy2(dfa.copy(), dfb.copy())
+    signals_macd = df['Signal']
+    st.subheader('MACD Strategy Visualization')
+    st.dataframe(df)
+
+    # Plot Price with Buy/Sell Signals
+    fig_price = plt.figure(figsize=(14, 10))
+    ax1 = fig_price.add_subplot(3, 1, 1)
+    ax1.plot(df['tick'], label='Price')
+    ax1.scatter(df.index[signals_macd == 1], df['tick'][signals_macd == 1], label='Buy Signal', s=25, marker='^', color='g', zorder=2)
+    ax1.scatter(df.index[signals_macd == -1], df['tick'][signals_macd == -1], label='Sell Signal', s=25, marker='v', color='r', zorder=2)
+    ax1.set_title('Price with Buy/Sell Signals', zorder=1)
+    ax1.legend()
+
+    # Plot Cumulative PnL
+    fig_pnl = plt.figure(figsize=(14, 10))
+    ax2 = fig_pnl.add_subplot(3, 1, 3)
+    ax2.plot(df['Cumulative Strategy PnL'], label='Cumulative PnL')
+    ax2.set_title('Cumulative PnL from MACD Strategy')
+    ax2.legend()
+
+    # Show plots using Streamlit
+    st.pyplot(fig_price)
+    st.pyplot(fig_pnl)
+
+    pd.options.mode.chained_assignment = 'warn'
+    
+    return df['Cumulative Strategy PnL'].iloc[-1] * entry
+    
+st.subheader('MACD Strategy')
+# Appeler la fonction avec les noms des stocks de votre choix
+selected_variable_1 = st.selectbox("Select Stock 1 for MACD", prices.columns)
+selected_variable_2 = st.selectbox("Select Stock 2 for MACD", prices.columns)
+
+macd_method(prices[selected_variable_1],prices[selected_variable_2] ,1000)
+def calculate_rsi(data, window=14):
+    change = data.diff()
+    gain = (change.where(change > 0, 0)).fillna(0)
+    loss = (-change.where(change < 0, 0)).fillna(0)
+
+    average_gain = gain.rolling(window=window).mean()
+    average_loss = loss.rolling(window=window).mean()
+    rs = average_gain / average_loss
+    rsi = 100 - (100 / (1 + rs))
+
+    return rsi
+
+def apply_rsi_strategy(data, rsi_lower=30, rsi_upper=70):
+    rsi = calculate_rsi(data['Close'])
+    data['RSI'] = rsi
+
+    data['Signal'] = 0
+    data['Signal'][rsi < rsi_lower] = 1  
+    data['Signal'][rsi > rsi_upper] = -1  #
+
+    data['Returns'] = data['Close'].pct_change()
+
+    data['Strategy Returns'] = data['Returns'] * data['Signal'].shift(1)
+    data['Cumulative Strategy PnL'] = (1 + data['Strategy Returns']).cumprod()
+    return data, data['Cumulative Strategy PnL'], data['Signal']
+
+def rsi_method(stock_a, stock_b, entry):
+    pd.options.mode.chained_assignment = None  
+    dfa = pd.DataFrame({'Close': stock_a})
+    dfb = pd.DataFrame({'Close': stock_b})
+    
+    df, cumulative_pnl_rsi, signals_rsi = apply_rsi_strategy(dfa.copy())
+
+    
+    st.subheader('RSI Strategy Visualization')
+    st.dataframe(df)
+    # Plot Price with Buy/Sell Signals
+    fig_price_rsi = plt.figure(figsize=(14, 7))
+    ax1_rsi = fig_price_rsi.add_subplot(2, 1, 1)
+    ax1_rsi.plot(dfb['Close'], label='Price')
+    ax1_rsi.scatter(dfb.index[signals_rsi == 1], dfb['Close'][signals_rsi == 1], label='Buy Signal', s=25, marker='^', color='g')
+    ax1_rsi.scatter(dfb.index[signals_rsi == -1], dfb['Close'][signals_rsi == -1], label='Sell Signal', s=25, marker='v', color='r')
+    ax1_rsi.set_title('Price with Buy/Sell Signals')
+    ax1_rsi.legend()
+
+    # Plot Cumulative PnL
+    fig_pnl_rsi = plt.figure(figsize=(14, 7))
+    ax2_rsi = fig_pnl_rsi.add_subplot(2, 1, 2)
+    ax2_rsi.plot(cumulative_pnl_rsi, label='Cumulative PnL')
+    ax2_rsi.set_title('Cumulative PnL from RSI Strategy')
+    ax2_rsi.legend()
+
+    # Show plots using Streamlit
+    st.pyplot(fig_price_rsi)
+    st.pyplot(fig_pnl_rsi)
+
+    pd.options.mode.chained_assignment = 'warn'  
+    
+    return cumulative_pnl_rsi.iloc[-1] * entry
+
+st.subheader('RSI Strategy')
+selected_variable_1_ = st.selectbox("Select Stock 1 for RSI", prices.columns)
+selected_variable_2_ = st.selectbox("Select Stock 2 for RSI", prices.columns)
+rsi_method(prices[selected_variable_1_],prices[selected_variable_2_] ,1000)

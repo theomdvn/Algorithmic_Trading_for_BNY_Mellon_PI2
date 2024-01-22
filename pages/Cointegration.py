@@ -181,7 +181,7 @@ def VAR_pred(pair1,pair2):
   # Vérification de la stationnarité des séries temporelles (peut être sauté si vos données sont déjà stationnaires)
     for column in data.columns:
         result = adfuller(data[column])
-        st.write(f'ADF Statistic for {column}: {result[0]}, p-value: {result[1]}')
+        #st.write(f'ADF Statistic for {column}: {result[0]}, p-value: {result[1]}')
 
     # Création et ajustement du modèle VAR
     model = VAR(train)
@@ -189,7 +189,7 @@ def VAR_pred(pair1,pair2):
 
     # Prévisions sur l'ensemble de test
     lags = model_fitted.k_ar
-    st.write('best lags : ', lags)
+    #st.write('best lags : ', lags)
     forecast = model_fitted.forecast(train.values[-lags:], steps=len(test))
 
     # Création d'un DataFrame pour les prévisions
@@ -406,18 +406,28 @@ true_indices = coint[coint].stack().index.tolist()
 if len(true_indices) > 0:
     row_indices, column_names = zip(*true_indices)
     # Display the results
+    st.subheader('Cointegrated pair found for this time frame : ')
     result_df = pd.DataFrame({
         'Row Index': row_indices,
         'Column Name': column_names
     })
     # Display the result DataFrame
     st.dataframe(result_df)
-
+    st.markdown("---")
+    result = 1
     for p1,p2 in zip(row_indices,column_names):
+        st.subheader(f'Var model for {p1},{p2}')
         df_res,pt = backtest(p1,p2,df_histo)
         st.table(df_res)
+        st.write(f'Number of trades : {len(df_res)}')
+        st.write(f'PnL : {pt:.4f}' )
+        st.markdown("---")
+        result *= pt
         #st.write(f'Final PnL {pt}')
         #show_error(p1,p2)
+    st.subheader(f'Total PNL : {result}' )
+
+   
 else:
     st.write('Try another time frame, no cointegration detected')
 # #gbpchf_nzdusd,_ ,_ , _, _, _, _ = VAR_pred('GBPCHF=X','NZDUSD=X')
