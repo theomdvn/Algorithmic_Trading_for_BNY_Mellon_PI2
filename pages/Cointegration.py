@@ -79,7 +79,7 @@ all_pairs = usd_pairs + eur_pairs + gbp_pairs
 forex_tickers = {pair: yf.Ticker(pair) for pair in all_pairs}
 
 start_date = st.date_input("Select start backtest Date",pd.to_datetime("2024-01-09"))
-end_date = st.date_input("Select End backtest Date",pd.to_datetime("2024-01-14"))
+end_date = st.date_input("Select End backtest Date",pd.to_datetime("2024-01-12"))
 timeframe = st.selectbox("Select Timeframe", ['5m','1m','2m','15m','30m','60m','90m','1h','1d','5d','1wk','1mo','3mo'])
 # Create a dictionary to store historical data for each pair
 historical_data =  {}
